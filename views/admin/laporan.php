@@ -39,8 +39,7 @@ $result = ambil_laporan_sirkulasi($conn);
                             <th>Judul Buku</th>
                             <th>Tgl Pinjam</th>
                             <th class="text-center">Status</th>
-                            <th>Denda</th>
-                            <th class="text-center">Aksi Konfirmasi Admin</th>
+                            <th>Denda</th> <th class="text-center">Aksi Konfirmasi Admin</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -73,8 +72,8 @@ $result = ambil_laporan_sirkulasi($conn);
                             </td>
                             <td>
                                 <?php 
-                                // FIX: Ngagunakeun 'tanggal_pinjam' sangkan teu error
-                                $tgl = $row['tanggal_pinjam']; 
+                                // Sinkronisasi jeung database: tgl_peminjaman
+                                $tgl = $row['tgl_peminjaman'] ?? $row['tanggal_pinjam'] ?? null; 
                                 if($tgl && $tgl != '0000-00-00') : ?>
                                     <span class="small text-dark"><i class="far fa-calendar-alt me-1"></i> <?= date('d/m/Y', strtotime($tgl)); ?></span>
                                 <?php else : ?>
@@ -87,8 +86,10 @@ $result = ambil_laporan_sirkulasi($conn);
                                 </span>
                             </td>
                             <td>
-                                <?php if($status == 'selesai' || ($row['denda'] ?? 0) > 0) : ?>
-                                    <?= ($row['denda'] > 0) ? '<span class="text-danger fw-bold small">Rp '.number_format($row['denda']).'</span>' : '<span class="text-success small fw-bold"><i class="fas fa-check-circle"></i> Lunas</span>' ?>
+                                <?php if(($row['denda'] ?? 0) > 0) : ?>
+                                    <span class="text-danger fw-bold small">Rp <?= number_format($row['denda']); ?></span>
+                                <?php elseif ($status == 'selesai') : ?>
+                                    <span class="text-success small fw-bold"><i class="fas fa-check-circle"></i> Lunas</span>
                                 <?php else : ?>
                                     <span class="text-muted small"><em>Berjalan</em></span>
                                 <?php endif; ?>
@@ -102,8 +103,12 @@ $result = ambil_laporan_sirkulasi($conn);
                                 <?php elseif($status == 'dipinjam') : ?>
                                     <span class="text-primary small fw-bold"><i class="fas fa-hand-holding-book"></i> Dipinjam</span>
                                 <?php elseif($status == 'kembali') : ?>
-                                    <a href="core/proses_pinjam.php?id=<?= $row['id_peminjaman']; ?>&action=konfirmasi_balik" class="btn btn-sm btn-info text-white px-3 rounded-pill shadow-sm fw-bold animate__animated animate__pulse animate__infinite">
+                                    <a href="core/proses_pinjam.php?id=<?= $row['id_peminjaman']; ?>&action=konfirmasi_balik" class="btn btn-sm btn-info text-white px-3 rounded-pill shadow-sm fw-bold">
                                         <i class="fas fa-check-circle me-1"></i> Konfirmasi Terima
+                                    </a>
+                                <?php elseif($status == 'selesai' && ($row['denda'] ?? 0) > 0) : ?>
+                                    <a href="core/proses_pinjam.php?id=<?= $row['id_peminjaman']; ?>&action=bayar_denda" class="btn btn-sm btn-warning px-3 rounded-pill shadow-sm fw-bold" onclick="return confirm('Konfirmasi pembayaran tunai?')">
+                                        <i class="fas fa-money-bill-wave me-1"></i> BAYAR
                                     </a>
                                 <?php elseif($status == 'selesai') : ?>
                                     <span class="text-success small fw-bold"><i class="fas fa-check-double"></i> SELESAI</span>

@@ -31,7 +31,7 @@ if (isset($_POST['proses_pinjam'])) {
         echo "<script>alert('Request terkirim! Cek status di menu Riwayat.'); window.location='../index.php?page=riwayat';</script>";
     }
 
-// --- B. PROSES ADMIN (SETUJU / TOLAK / TERIMA) ---
+// --- B. PROSES ADMIN (SETUJU / TOLAK / TERIMA / BAYAR DENDA) ---
 } elseif (isset($_GET['id']) && isset($_GET['action'])) {
     $id_peminjaman = mysqli_real_escape_string($conn, $_GET['id']);
     $action = $_GET['action'];
@@ -49,7 +49,7 @@ if (isset($_POST['proses_pinjam'])) {
         // 1. Kurangan stok buku
         mysqli_query($conn, "UPDATE buku SET stok = stok - 1 WHERE id_buku = '$id_b'");
         
-        // 2. FIX: Update tanggal_pinjam sarta wates balik sangkan teu 0000-00-00
+        // 2. Update status sarta tanggal pinjam
         $sql = "UPDATE peminjaman SET 
                 status = 'dipinjam', 
                 tanggal_pinjam = '$tgl_skrg', 
@@ -57,16 +57,14 @@ if (isset($_POST['proses_pinjam'])) {
                 WHERE id_peminjaman = '$id_peminjaman'";
         
         if (mysqli_query($conn, $sql)) {
-            echo "<script>alert('Pinjaman disetujui! Tanggal pinjam geus diatur.'); window.location='../index.php?page=sirkulasi';</script>";
+            echo "<script>alert('Pinjaman disetujui!'); window.location='../index.php?page=sirkulasi';</script>";
         }
 
     } elseif ($action == 'tolak') {
         mysqli_query($conn, "UPDATE peminjaman SET status = 'ditolak' WHERE id_peminjaman = '$id_peminjaman'");
         echo "<script>alert('Pinjaman ditolak!'); window.location='../index.php?page=sirkulasi';</script>";
-    } 
-    
-    // Admin narima buku balik (Status jadi SELESAI)
-    elseif ($action == 'konfirmasi_balik') {
+
+    } elseif ($action == 'konfirmasi_balik') {
         $data_p = mysqli_query($conn, "SELECT id_buku FROM peminjaman WHERE id_peminjaman = '$id_peminjaman'");
         $row_p = mysqli_fetch_assoc($data_p);
         $id_b = $row_p['id_buku'];
@@ -77,7 +75,16 @@ if (isset($_POST['proses_pinjam'])) {
         // Update status jadi SELESAI
         $sql = "UPDATE peminjaman SET status='selesai' WHERE id_peminjaman='$id_peminjaman'";
         if (mysqli_query($conn, $sql)) {
-            echo "<script>alert('Buku ditarima! Transaksi Selesai.'); window.location='../index.php?page=sirkulasi';</script>";
+            echo "<script>alert('Buku ditarima!'); window.location='../index.php?page=sirkulasi';</script>";
+        }
+
+    } 
+    // --- FITUR ANYAR: KONFIRMASI BAYAR DENDA ---
+    elseif ($action == 'bayar_denda') {
+        // Query pikeun mupus denda (dianggap geus bayar tunai ka petugas)
+        $sql = "UPDATE peminjaman SET denda = 0 WHERE id_peminjaman = '$id_peminjaman'";
+        if (mysqli_query($conn, $sql)) {
+            echo "<script>alert('Denda berhasil dilunasi!'); window.location='../index.php?page=sirkulasi';</script>";
         }
     }
 
